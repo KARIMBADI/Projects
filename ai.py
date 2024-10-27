@@ -1,37 +1,47 @@
-# pip install requests
-import requests
-from openai import OpenAI
-url = "https://api.lemonfox.ai/v1/audio/transcriptions"
-headers = {
-  "Authorization": "6l8R7VFEawJdoaOAcDoPQ845gtOhjBIR"
-}
-data = {
-  "file": "https://output.lemonfox.ai/wikipedia_ai.mp3",
-  "language": "english",
-  "response_format": "text"
-}
-
-response = requests.post(url, headers=headers, data=data)
-print(response.text())
-
-# To upload a local file add the files parameter:
-# files = {"file": open("/path/to/audio.mp3", "rb")}
-# response = requests.post(url, headers=headers, files=files, data=data)
-
-# pip install --upgrade openai
+import openai
+import speech_recognition as sr
 
 
-client = OpenAI(
-  api_key="6l8R7VFEawJdoaOAcDoPQ845gtOhjBIR",
-  base_url="https://api.lemonfox.ai/v1",
-)
+# Set your OpenAI API key here
+openai.api_key = 'Paste you api key here'
 
-completion = client.chat.completions.create(
-  messages=[
-    { "role": "system", "content": "You are a helpful assistant." },
-    { "role": "user", "content": "How many days are in a year?" }
-  ],
-  model="llama-8b-chat",
-)
+def ask_openai(question):
+    """Function to ask OpenAI's model a question and return the response."""
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",  # You can use any OpenAI model of your choice
+        messages=[
+            {"role": "user", "content": question}
+        ]
+    )
+    return response['choices'][0]['message']['content']
 
-print(completion.choices[0].message.content)
+def listen_to_audio():
+    """Function to listen to audio and convert it to text."""
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening for a question...")
+        audio = recognizer.listen(source)
+       
+        try:
+            # Recognizing the audio using Google Web Speech API
+            text = recognizer.recognize_google(audio)
+            print(f"You asked: {text}")
+            return text
+        except sr.UnknownValueError:
+            print("Sorry, I could not understand the audio.")
+            return None
+        except sr.RequestError as e:
+            print(f"Could not request results from Google Speech Recognition service; {e}")
+            return None
+
+def main():
+    while True:
+        # Get the question from the interviewer
+        question = listen_to_audio()
+        if question:
+            # Get the answer from OpenAI
+            answer = ask_openai(question)
+            print(f"Answer: {answer}")
+
+if __name__ == "__main__":
+    main()
